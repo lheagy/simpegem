@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from SimPEG import Utils
 
 
-def hzAnalyticDipoleF(r, freq, sigma, secondary=True, mu=mu_0):
+def hzDipoleF(r, freq, sigma, secondary=True, mu=mu_0):
     """
     4.56 in Ward and Hohmann
 
@@ -42,7 +42,7 @@ def hzAnalyticDipoleF(r, freq, sigma, secondary=True, mu=mu_0):
 
     return hz
 
-def AnalyticMagDipoleWholeSpace(XYZ, srcLoc, sig, f, moment=1., orientation='X', mu = mu_0):
+def MagDipoleWholeSpace(XYZ, srcLoc, sig, f, moment=1., orientation='X', mu = mu_0):
     """
     Analytical solution for a dipole in a whole-space.
 

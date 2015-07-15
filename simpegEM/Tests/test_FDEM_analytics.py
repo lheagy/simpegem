@@ -58,7 +58,7 @@ class FDEM_analyticTests(unittest.TestCase):
 
         P = self.mesh.getInterpolationMat(XYZ, 'Fz')
 
-        an = EM.Analytics.FDEM.hzAnalyticDipoleF(x, self.Src0.freq, self.sig)
+        an = EM.Utils.Analytics.FDEM.hzDipoleF(x, self.Src0.freq, self.sig)
 
         diff = np.log10(np.abs(P*np.imag(u[self.Src0, 'b']) - mu_0*np.imag(an)))
 

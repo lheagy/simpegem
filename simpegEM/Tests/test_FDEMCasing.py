@@ -1,5 +1,5 @@
 from SimPEG import Tests, Utils, np
-import simpegEM.Analytics.FDEMcasing as Casing
+import simpegEM.Utils.Analytics.FDEMcasing as Casing
 import unittest
 from scipy.constants import mu_0
 
