@@ -2,11 +2,11 @@ from SimPEG import Survey, Problem, Utils, np, sp
 from simpegEM.Utils import SrcUtils
 from simpegEM.Utils.EMUtils import omega, e_from_j, j_from_e, b_from_h, h_from_b
 from scipy.constants import mu_0
-from Rx import RxFDEM as RxFDEM
+from Rx import Rx
 
 class SrcFDEM(Survey.BaseSrc):
     freq = None
-    rxPair = RxFDEM
+    rxPair = Rx
 
     def eval(self, prob):
         S_m = self.S_m(prob)
@@ -41,7 +41,7 @@ class SrcFDEM(Survey.BaseSrc):
         return None
 
 
-class SrcFDEM_RawVec_e(SrcFDEM):
+class RawVec_e(SrcFDEM):
     """
         RawVec electric source. It is defined by the user provided vector S_e
 
@@ -59,7 +59,7 @@ class SrcFDEM_RawVec_e(SrcFDEM):
         return self._S_e
 
 
-class SrcFDEM_RawVec_m(SrcFDEM):
+class RawVec_m(SrcFDEM):
     """
         RawVec magnetic source. It is defined by the user provided vector S_m
 
@@ -77,7 +77,7 @@ class SrcFDEM_RawVec_m(SrcFDEM):
         return self._S_m
 
 
-class SrcFDEM_RawVec(SrcFDEM):
+class RawVec(SrcFDEM):
     """
         RawVec source. It is defined by the user provided vectors S_m, S_e
 
@@ -99,7 +99,7 @@ class SrcFDEM_RawVec(SrcFDEM):
         return self._S_e
 
  
-class SrcFDEM_MagDipole(SrcFDEM):
+class MagDipole(SrcFDEM):
 
     #TODO: right now, orientation doesn't actually do anything! The methods in SrcUtils should take care of that
     def __init__(self, rxList, freq, loc, orientation='Z', moment=1., mu = mu_0):
@@ -167,7 +167,7 @@ class SrcFDEM_MagDipole(SrcFDEM):
             return -C.T * (MMui_s * self.bPrimary(prob))
 
 
-class SrcFDEM_MagDipole_Bfield(SrcFDEM):
+class MagDipole_Bfield(SrcFDEM):
 
     #TODO: right now, orientation doesn't actually do anything! The methods in SrcUtils should take care of that
     #TODO: neither does moment
@@ -236,7 +236,7 @@ class SrcFDEM_MagDipole_Bfield(SrcFDEM):
             return -C.T * (MMui_s * self.bPrimary(prob))
 
 
-class SrcFDEM_CircularLoop(SrcFDEM):
+class CircularLoop(SrcFDEM):
 
     #TODO: right now, orientation doesn't actually do anything! The methods in SrcUtils should take care of that
     def __init__(self, rxList, freq, loc, orientation='Z', radius = 1., mu=mu_0):

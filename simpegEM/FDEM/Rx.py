@@ -2,7 +2,7 @@ from SimPEG import Survey, Problem, Utils, np, sp
 from simpegEM.Utils.EMUtils import omega, e_from_j, j_from_e, b_from_h, h_from_b
 from scipy.constants import mu_0
 
-class RxFDEM(Survey.BaseRx):
+class Rx(Survey.BaseRx):
 
     knownRxTypes = {
                     'exr':['e', 'Ex', 'real'],

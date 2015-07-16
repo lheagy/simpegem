@@ -22,8 +22,8 @@ class FDEM_analyticTests(unittest.TestCase):
 
         x = np.linspace(-10,10,5)
         XYZ = Utils.ndgrid(x,np.r_[0],np.r_[0])
-        rxList = EM.FDEM.RxFDEM(XYZ, 'exi')
-        Src0 = EM.FDEM.SrcFDEM_MagDipole([rxList],loc=np.r_[0.,0.,0.], freq=freq)
+        rxList = EM.FDEM.Rx(XYZ, 'exi')
+        Src0 = EM.FDEM.Src.MagDipole([rxList],loc=np.r_[0.,0.,0.], freq=freq)
 
         survey = EM.FDEM.SurveyFDEM([Src0])
 

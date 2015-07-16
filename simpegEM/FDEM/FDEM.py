@@ -1,6 +1,8 @@
 from SimPEG import Survey, Problem, Utils, np, sp, Solver as SimpegSolver
 from scipy.constants import mu_0
-from Survey import *
+from SurveyFDEM import SurveyFDEM
+import Src
+from Rx import Rx
 from FieldsFDEM import FieldsFDEM, FieldsFDEM_e, FieldsFDEM_b, FieldsFDEM_h, FieldsFDEM_j
 from simpegEM.Base import BaseEMProblem
 from simpegEM.Utils.EMUtils import omega
