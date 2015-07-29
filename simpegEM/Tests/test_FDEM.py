@@ -26,10 +26,10 @@ def getMesh(meshtype='TensorMesh'):
     ncx, ncy, ncz = 6, 6, 6
     npad = 3
     if meshtype is 'TensorMesh':
-        mesh = Mesh.TensorMesh([hx,hy,hz],['C','C','C'])
         hx = [(cs,npad,-1.3), (cs,ncx), (cs,npad,1.3)]
         hy = [(cs,npad,-1.3), (cs,ncy), (cs,npad,1.3)]
         hz = [(cs,npad,-1.3), (cs,ncz), (cs,npad,1.3)]
+        mesh = Mesh.TensorMesh([hx,hy,hz],['C','C','C'])
     return mesh
 
 def getProblem(fdemType, comp):
