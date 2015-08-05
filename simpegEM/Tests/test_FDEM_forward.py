@@ -210,6 +210,7 @@ class FDEM_ForwardTests(unittest.TestCase):
 class fictitiousSourceTest(OrderTest): 
     name = "Fictitious Source"
     meshTypes = ['uniformTensorMesh', 'uniformCurv']
+    meshSizes = [8, 16, 32, 64]
 
     def getErr(self):
 
@@ -220,6 +221,7 @@ class fictitiousSourceTest(OrderTest):
         c = 2.
 
         r2 = lambda x, y, z: x**2 + y**2 + z**2
+        r = lambda x, y, z: np.sqrt(r)
 
         muFun = lambda x, y, z: mu_0 / ( (np.arctan(a[0]*x) + b[0])*(np.arctan(a[1]*y) + b[1])*(np.arctan(a[2]*z) + b[2]))
         sigFun = lambda x, y, z: 1. / ( (np.arctan(a[3]*x) + b[3])*(np.arctan(a[4]*y) + b[4])*(np.arctan(a[5]*z) + b[5]))
@@ -227,27 +229,86 @@ class fictitiousSourceTest(OrderTest):
         exFun = lambda x, y, z: np.exp(-r2(x, y, z)/c) * (np.arctan(a[0]*x) + b[0])
         eyFun = lambda x, y, z: np.exp(-r2(x, y, z)/c) * (np.arctan(a[1]*y) + b[1])
         ezFun = lambda x, y, z: np.exp(-r2(x, y, z)/c) * (np.arctan(a[2]*z) + b[2])
-        eFun = lambda x, y, z: np.hstack([exFun(x, y, z),eyFun(x, y, z),ezFun(x, y, z)])
-
-        # curl_eFun_x = lambda x, y, z: 
 
         hxFun = lambda x, y, z: np.exp(-r2(x, y, z)/c) * (np.arctan(a[3]*x) + b[3])
         hyFun = lambda x, y, z: np.exp(-r2(x, y, z)/c) * (np.arctan(a[4]*y) + b[4])
         hzFun = lambda x, y, z: np.exp(-r2(x, y, z)/c) * (np.arctan(a[5]*z) + b[5])
-        hFun = lambda x, y, z: np.hstack([hxFun(x, y, z),hyFun(x, y, z),hzFun(x, y, z)])
 
         jxFun = lambda x, y, z: sigFun(x, y, z) * exFun(x, y, z)
         jyFun = lambda x, y, z: sigFun(x, y, z) * eyFun(x, y, z)
         jzFun = lambda x, y, z: sigFun(x, y, z) * ezFun(x, y, z)
-        jFun = lambda x, y, z: np.hstack([jxFun(x, y, z),jyFun(x, y, z),jzFun(x, y, z)])
 
         bxFun = lambda x, y, z: muFun(x, y, z) * hxFun(x, y, z)
         byFun = lambda x, y, z: muFun(x, y, z) * hyFun(x, y, z)
         bzFun = lambda x, y, z: muFun(x, y, z) * hzFun(x, y, z)
-        bFun = lambda x, y, z: np.hstack([bxFun(x, y, z),byFun(x, y, z),bzFun(x, y, z)])
+        
+
+        S_mfict = lambda grid, f: curl_eFun(grid) + 1j * EM.Utils.EMUtils.omega(f) * muFun(x, y, z).dot(hFun(x, y, z)) 
+        S_efict = lambda grid: curl_hFun(grid) - sigmaFun(x, y, z).dot(eFun())
+
+        def curlE(gridX, gridY, gridZ):
+
+            dy_exFun = lambda x, y, z: -2./c * y * exFun(x, y, z)
+            dz_exFun = lambda x, y, z: -2./c * z * exFun(x, y, z)
+            dx_eyFun = lambda x, y, z: -2./c * x * eyFun(x, y, z)
+            dz_eyFun = lambda x, y, z: -2./c * z * eyFun(x, y, z)
+            dy_exFun = lambda x, y, z: -2./c * x * ezFun(x, y, z)
+            dy_ezFun = lambda x, y, z: -2./c * y * ezFun(x, y, z) 
+
+            curl_eFun_x = lambda x, y, z: dy_ezFun(x, y, z) - dz_eyFun(x, y, z)
+            curl_eFun_y = lambda x, y, z: dz_exFun(x, y, z) - dx_ezFun(x, y, z)
+            curl_eFun_z = lambda x, y, z: dx_eyFun(x, y, z) - dy_exFun(x, y, z)
+
+            curlE_x = curl_eFun_x(gridX[:,0], gridX[:,1], gridX[:,2])
+            curlE_y = curl_eFun_y(gridY[:,0], gridY[:,1], gridY[:,2])
+            curlE_z = curl_eFun_z(gridZ[:,0], gridZ[:,1], gridZ[:,2])
+
+            return np.hstack([curlE_x, curlE_y, curlE_z])
+
+
+        def B(gridX, gridY, gridZ):
+
+            bx = bxFun(gridX[:,0], gridX[:,1], gridX[:,2])
+            by = byFun(gridY[:,0], gridY[:,1], gridY[:,2])
+            bz = bzFun(gridZ[:,0], gridZ[:,1], gridZ[:,2])
+
+            return np.hstack([bx, by, bz])
+
+
+        def curlH(gridX, gridY, gridZ): 
+
+            dy_hxFun = lambda x, y, z: -2./c * y * hxFun(x, y, z)
+            dz_hxFun = lambda x, y, z: -2./c * z * hxFun(x, y, z)
+            dx_hyFun = lambda x, y, z: -2./c * x * hyFun(x, y, z)
+            dz_hyFun = lambda x, y, z: -2./c * z * hyFun(x, y, z)
+            dy_hxFun = lambda x, y, z: -2./c * x * hzFun(x, y, z)
+            dy_hzFun = lambda x, y, z: -2./c * y * hzFun(x, y, z) 
+
+            curl_hFun_x = lambda x, y, z: dy_hzFun(x, y, z) - dz_hyFun(x, y, z)
+            curl_hFun_y = lambda x, y, z: dz_hxFun(x, y, z) - dx_hzFun(x, y, z)
+            curl_hFun_y = lambda x, y, z: dx_hyFun(x, y, z) - dy_hxFun(x, y, z)
+
+            curlH_x = curl_hFun_x(gridX[:,0], gridX[:,1], gridX[:,2])
+            curlH_y = curl_hFun_y(gridY[:,0], gridY[:,1], gridY[:,2])
+            curlH_z = curl_hFun_z(gridZ[:,0], gridZ[:,1], gridZ[:,2])
+
+            return np.hstack([curlH_x, curlH_y, curlH_z])
+
+
+        def J(gridX, gridY, gridZ):
+
+            jx = jxFun(gridX[:,0], gridX[:,1], gridX[:,2])
+            jy = jyFun(gridY[:,0], gridY[:,1], gridY[:,2])
+            jz = jzFun(gridZ[:,0], gridZ[:,1], gridZ[:,2])
+
+            return np.hstack([jx, jy, jz])
+
+        # def S_mfict(mesh,fdemType):
+        #     if fdemType is 'e' or 'b':
+                
 
         for fdemType in ['e','b','h','j']:
-            comp = fdemType + 'xr'
+            comp = fdemType +
 
         mapping = [('sigma', Maps.IdentityMap(mesh)),('mu', Maps.IdentityMap(mesh))]
 
