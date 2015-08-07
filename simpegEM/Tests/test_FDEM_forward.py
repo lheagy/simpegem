@@ -6,11 +6,13 @@ import simpegEM as EM
 import sys  
 from scipy.constants import mu_0
  
-
+# for cross check test
 testCrossCheck = False
-testFictitiousSource = True
 testEB = True
 testHJ = True
+
+# for Fictitious Source test
+testFictitiousSource = True
 
 verbose = False
 
@@ -331,16 +333,20 @@ class fictitiousSourceTest(OrderTest):
 
         mapping = [('sigma', Maps.IdentityMap(self.M)),('mu', Maps.IdentityMap(self.M))]
   
-        # print S_mfict.shape, S_efict.shape
         src = EM.FDEM.Src.RawVec([], freq, S_mfict, S_efict)
         survey = EM.FDEM.SurveyFDEM([src])
 
         if fdemType is 'e': 
             prb = EM.FDEM.ProblemFDEM_e(self.M, mapping=mapping)
-            # sol_ana = E(self.M.gridEx, self.M.gridEy, self.M.gridEz)
             sol_ana = B(self.M.gridFx, self.M.gridFy, self.M.gridFz)
             solType = 'b'
             Av = self.M.aveF2CCV
+
+            # UNCOMMENT TO TEST AGAINST E
+            # sol_ana = E(self.M.gridEx, self.M.gridEy, self.M.gridEz)
+            # solType = 'e'
+            # Av = self.M.aveE2CCV
+
         elif fdemType is 'b': 
             prb = EM.FDEM.ProblemFDEM_b(self.M, mapping=mapping)
             sol_ana = B(self.M.gridFx, self.M.gridFy, self.M.gridFz)
@@ -355,8 +361,12 @@ class fictitiousSourceTest(OrderTest):
             prb = EM.FDEM.ProblemFDEM_h(self.M, mapping=mapping)
             sol_ana = J(self.M.gridFx, self.M.gridFy, self.M.gridFz)
             solType = 'j'
-            # sol_ana = H(self.M.gridEx, self.M.gridEy, self.M.gridEz)
             Av = self.M.aveF2CCV
+
+            # UNCOMMENT TO TEST AGAINST H
+            # sol_ana = H(self.M.gridEx, self.M.gridEy, self.M.gridEz)
+            # solType = 'h'
+            # Av = self.M.aveE2CCV
 
         prb.pair(survey)
 
