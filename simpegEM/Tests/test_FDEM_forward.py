@@ -13,6 +13,7 @@ testHJ = True
 
 # for Fictitious Source test
 testFictitiousSource = True
+testType = 'Flux' # or 'Flux' or 'Field'
 
 verbose = False
 
@@ -338,47 +339,51 @@ class fictitiousSourceTest(OrderTest):
 
         if fdemType is 'e': 
             prb = EM.FDEM.ProblemFDEM_e(self.M, mapping=mapping)
-            sol_ana = B(self.M.gridFx, self.M.gridFy, self.M.gridFz)
-            solType = 'b'
-            Av = self.M.aveF2CCV
 
-            # UNCOMMENT TO TEST AGAINST E
-            # sol_ana = E(self.M.gridEx, self.M.gridEy, self.M.gridEz)
-            # solType = 'e'
-            # Av = self.M.aveE2CCV
+            if testType is 'Flux':  
+                sol_ana = B(self.M.gridFx, self.M.gridFy, self.M.gridFz)
+                Av = self.M.aveF2CCV
+                solType = 'b'
+            elif testType is 'Field':
+                sol_ana = E(self.M.gridEx, self.M.gridEy, self.M.gridEz)
+                solType = 'e'
+                Av = self.M.aveE2CCV
 
-        elif fdemType is 'b': 
+        elif fdemType is 'b':
             prb = EM.FDEM.ProblemFDEM_b(self.M, mapping=mapping)
-            sol_ana = B(self.M.gridFx, self.M.gridFy, self.M.gridFz)
-            Av = self.M.aveF2CCV
-            solType = 'b'
 
-            # UNCOMMENT TO TEST AGAINST E
-            # sol_ana = E(self.M.gridEx, self.M.gridEy, self.M.gridEz)
-            # solType = 'e'
-            # Av = self.M.aveE2CCV
-            
+            if testType is 'Flux':  
+                sol_ana = B(self.M.gridFx, self.M.gridFy, self.M.gridFz)
+                Av = self.M.aveF2CCV
+                solType = 'b'
+            elif testType is 'Field':
+                sol_ana = E(self.M.gridEx, self.M.gridEy, self.M.gridEz)
+                solType = 'e'
+                Av = self.M.aveE2CCV
+
         elif fdemType is 'j': 
             prb = EM.FDEM.ProblemFDEM_j(self.M, mapping=mapping)
-            sol_ana = J(self.M.gridFx, self.M.gridFy, self.M.gridFz)
-            Av = self.M.aveF2CCV
-            solType = 'j'
 
-            # UNCOMMENT TO TEST AGAINST H
-            # sol_ana = H(self.M.gridEx, self.M.gridEy, self.M.gridEz)
-            # solType = 'h'
-            # Av = self.M.aveE2CCV
+            if testType is 'Flux':  
+                sol_ana = J(self.M.gridFx, self.M.gridFy, self.M.gridFz)
+                Av = self.M.aveF2CCV
+                solType = 'j'
+            elif testType is 'Field':
+                sol_ana = H(self.M.gridEx, self.M.gridEy, self.M.gridEz)
+                solType = 'h'
+                Av = self.M.aveE2CCV
 
         elif fdemType is 'h': 
             prb = EM.FDEM.ProblemFDEM_h(self.M, mapping=mapping)
-            sol_ana = J(self.M.gridFx, self.M.gridFy, self.M.gridFz)
-            solType = 'j'
-            Av = self.M.aveF2CCV
 
-            # UNCOMMENT TO TEST AGAINST H
-            # sol_ana = H(self.M.gridEx, self.M.gridEy, self.M.gridEz)
-            # solType = 'h'
-            # Av = self.M.aveE2CCV
+            if testType is 'Flux':  
+                sol_ana = J(self.M.gridFx, self.M.gridFy, self.M.gridFz)
+                Av = self.M.aveF2CCV
+                solType = 'j'
+            elif testType is 'Field':
+                sol_ana = H(self.M.gridEx, self.M.gridEy, self.M.gridEz)
+                solType = 'h'
+                Av = self.M.aveE2CCV
 
         prb.pair(survey)
 
