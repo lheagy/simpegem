@@ -9,8 +9,8 @@ class SrcFDEM(Survey.BaseSrc):
     rxPair = Rx
 
     def eval(self, prob):
-        S_m = Utils.mkvc(self.S_m(prob))
-        S_e = Utils.mkvc(self.S_e(prob))
+        S_m = self.S_m(prob)
+        S_e = self.S_e(prob)
         return S_m, S_e 
 
     def evalDeriv(self, prob, v, adjoint=False):
@@ -56,7 +56,7 @@ class RawVec_e(SrcFDEM):
         SrcFDEM.__init__(self, rxList)
 
     def S_e(self, prob):
-        return self._S_e
+        return Utils.mkvc(self._S_e)
 
 
 class RawVec_m(SrcFDEM):
@@ -74,7 +74,7 @@ class RawVec_m(SrcFDEM):
         SrcFDEM.__init__(self, rxList)
 
     def S_m(self, prob):
-        return self._S_m
+        return Utile.mkvc(self._S_m)
 
 
 class RawVec(SrcFDEM):
@@ -93,10 +93,10 @@ class RawVec(SrcFDEM):
         SrcFDEM.__init__(self, rxList)
 
     def S_m(self, prob):
-        return self._S_m
+        return Utils.mkvc(self._S_m)
 
     def S_e(self, prob):
-        return self._S_e
+        return Utils.mkvc(self._S_e)
 
  
 class MagDipole(SrcFDEM):

@@ -214,10 +214,10 @@ class fictitiousSourceTest(OrderTest):
     def getError(self):
 
         np.random.seed = 2
-        a = np.random.rand(6)
+        a = 1e10*np.random.rand(6)
         np.random.seed = 5
         b = np.random.rand(6) + 10. # make sure b is large enough so that neither sig nor mu is below zero
-        c = 40.
+        c = 20.
 
         r2 = lambda x, y, z: x**2 + y**2 + z**2
         r = lambda x, y, z: np.sqrt(r)
