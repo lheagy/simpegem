@@ -9,8 +9,8 @@ class SrcFDEM(Survey.BaseSrc):
     rxPair = Rx
 
     def eval(self, prob):
-        S_m = self.S_m(prob)
-        S_e = self.S_e(prob)
+        S_m = Utils.mkvc(self.S_m(prob))
+        S_e = Utils.mkvc(self.S_e(prob))
         return S_m, S_e 
 
     def evalDeriv(self, prob, v, adjoint=False):

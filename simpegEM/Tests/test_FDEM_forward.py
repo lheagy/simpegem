@@ -337,20 +337,26 @@ class fictitiousSourceTest(OrderTest):
 
         if fdemType is 'e': 
             prb = EM.FDEM.ProblemFDEM_e(self.M, mapping=mapping)
-            sol_ana = E(self.M.gridEx, self.M.gridEy, self.M.gridEz)
-            Av = self.M.aveE2CCV
+            # sol_ana = E(self.M.gridEx, self.M.gridEy, self.M.gridEz)
+            sol_ana = B(self.M.gridFx, self.M.gridFy, self.M.gridFz)
+            solType = 'b'
+            Av = self.M.aveF2CCV
         elif fdemType is 'b': 
             prb = EM.FDEM.ProblemFDEM_b(self.M, mapping=mapping)
             sol_ana = B(self.M.gridFx, self.M.gridFy, self.M.gridFz)
             Av = self.M.aveF2CCV
+            solType = 'b'
         elif fdemType is 'j': 
             prb = EM.FDEM.ProblemFDEM_j(self.M, mapping=mapping)
             sol_ana = J(self.M.gridFx, self.M.gridFy, self.M.gridFz)
             Av = self.M.aveF2CCV
+            solType = 'j'
         elif fdemType is 'h': 
             prb = EM.FDEM.ProblemFDEM_h(self.M, mapping=mapping)
-            sol_ana = H(self.M.gridEx, self.M.gridEy, self.M.gridEz)
-            Av = self.M.aveE2CCV
+            sol_ana = J(self.M.gridFx, self.M.gridFy, self.M.gridFz)
+            solType = 'j'
+            # sol_ana = H(self.M.gridEx, self.M.gridEy, self.M.gridEz)
+            Av = self.M.aveF2CCV
 
         prb.pair(survey)
 
@@ -360,11 +366,10 @@ class fictitiousSourceTest(OrderTest):
         except ImportError, e:
             pass
 
-        sol = prb.fields(np.r_[sigma,mu])[src,fdemType]
+        sol = prb.fields(np.r_[sigma,mu])[src,solType]
 
         res2 = abs(sol - sol_ana)**2
         Vt = np.kron(np.ones([1,3]),self.M.vol)
-
         err = np.sqrt(Vt*(Av*res2))[0][0]
         return err
 
