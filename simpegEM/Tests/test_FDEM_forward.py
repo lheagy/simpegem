@@ -7,7 +7,7 @@ import sys
 from scipy.constants import mu_0
  
 # for cross check test
-testCrossCheck = False
+testCrossCheck = True
 testEB = True
 testHJ = True
 
