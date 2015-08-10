@@ -7,7 +7,7 @@ import sys
 from scipy.constants import mu_0
  
 # for cross check test
-testCrossCheck = True
+testCrossCheck = False
 testEB = True
 testHJ = True
 
@@ -209,127 +209,150 @@ class FDEM_ForwardTests(unittest.TestCase):
 class fictitiousSourceTest(OrderTest): 
     name = "Fictitious Source"
     meshTypes = ['uniformTensorMesh', 'uniformCurv']
-    meshSizes = [2, 4, 8]
+    meshSizes = [16, 24, 32]
     freq = 1. 
 
+    def r2(self,x,y,z):
+        return x**2 + y**2 + z**2
 
+    def r(self,x,y,z):
+        return np.sqrt(r)
+
+    def muFun(self,x,y,z):
+        a = self.a
+        b = self.b
+        c = self.c
+        return mu_0 / ( (np.arctan(a[0]*x) + b[0])*(np.arctan(a[1]*y) + b[1])*(np.arctan(a[2]*z) + b[2]))
+
+    def sigFun(self,x,y,z):
+        a = self.a
+        b = self.b
+        c = self.c
+        return 1. / ( (np.arctan(a[3]*x) + b[3])*(np.arctan(a[4]*y) + b[4])*(np.arctan(a[5]*z) + b[5]))
+
+    def eFun(self):
+        exFun = lambda x, y, z: np.exp(-self.r2(x, y, z)/self.c) * (np.arctan(self.a[0]*x) + self.b[0])
+        eyFun = lambda x, y, z: np.exp(-self.r2(x, y, z)/self.c) * (np.arctan(self.a[1]*y) + self.b[1])
+        ezFun = lambda x, y, z: np.exp(-self.r2(x, y, z)/self.c) * (np.arctan(self.a[2]*z) + self.b[2])
+        return exFun, eyFun, ezFun
+
+
+    def E(self,gridX, gridY, gridZ):
+        exFun, eyFun, exFun = self.eFun()
+        ex = exFun(gridX[:,0], gridX[:,1], gridX[:,2])
+        ey = eyFun(gridY[:,0], gridY[:,1], gridY[:,2])
+        ez = ezFun(gridZ[:,0], gridZ[:,1], gridZ[:,2])
+
+        return Utils.mkvc(np.hstack([ex, ey, ez]),2)
+
+    def curlE(self, gridX, gridY, gridZ):
+        exFun, eyFun, ezFun = self.eFun()
+
+        dy_exFun = lambda x, y, z: -2./self.c * y * exFun(x, y, z)
+        dz_exFun = lambda x, y, z: -2./self.c * z * exFun(x, y, z)
+        dx_eyFun = lambda x, y, z: -2./self.c * x * eyFun(x, y, z)
+        dz_eyFun = lambda x, y, z: -2./self.c * z * eyFun(x, y, z)
+        dx_ezFun = lambda x, y, z: -2./self.c * x * ezFun(x, y, z)
+        dy_ezFun = lambda x, y, z: -2./self.c * y * ezFun(x, y, z) 
+
+        curl_eFun_x = lambda x, y, z: dy_ezFun(x, y, z) - dz_eyFun(x, y, z)
+        curl_eFun_y = lambda x, y, z: dz_exFun(x, y, z) - dx_ezFun(x, y, z)
+        curl_eFun_z = lambda x, y, z: dx_eyFun(x, y, z) - dy_exFun(x, y, z)
+
+        curlE_x = curl_eFun_x(gridX[:,0], gridX[:,1], gridX[:,2])
+        curlE_y = curl_eFun_y(gridY[:,0], gridY[:,1], gridY[:,2])
+        curlE_z = curl_eFun_z(gridZ[:,0], gridZ[:,1], gridZ[:,2])
+
+        return Utils.mkvc(np.hstack([curlE_x, curlE_y, curlE_z]),2)
+
+    def hFun(self):
+        hxFun = lambda x, y, z: np.exp(-self.r2(x, y, z)/self.c) * (np.arctan(self.a[3]*x) + self.b[3])
+        hyFun = lambda x, y, z: np.exp(-self.r2(x, y, z)/self.c) * (np.arctan(self.a[4]*y) + self.b[4])
+        hzFun = lambda x, y, z: np.exp(-self.r2(x, y, z)/self.c) * (np.arctan(self.a[5]*z) + self.b[5])
+
+        return hxFun, hyFun, hzFun
+
+
+    def H(self, gridX, gridY, gridZ):
+        hxFun, hyFun, hzFun = self.hFun()
+        hx = hxFun(gridX[:,0], gridX[:,1], gridX[:,2])
+        hy = hyFun(gridY[:,0], gridY[:,1], gridY[:,2])
+        hz = hzFun(gridZ[:,0], gridZ[:,1], gridZ[:,2])
+
+        return Utils.mkvc(np.hstack([hx, hy, hz]),2)   
+
+    def curlH(self, gridX, gridY, gridZ): 
+        hxFun, hyFun, hzFun = self.hFun()
+
+        dy_hxFun = lambda x, y, z: -2./self.c * y * hxFun(x, y, z)
+        dz_hxFun = lambda x, y, z: -2./self.c * z * hxFun(x, y, z)
+        dx_hyFun = lambda x, y, z: -2./self.c * x * hyFun(x, y, z)
+        dz_hyFun = lambda x, y, z: -2./self.c * z * hyFun(x, y, z)
+        dx_hzFun = lambda x, y, z: -2./self.c * x * hzFun(x, y, z)
+        dy_hzFun = lambda x, y, z: -2./self.c * y * hzFun(x, y, z) 
+
+        curl_hFun_x = lambda x, y, z: dy_hzFun(x, y, z) - dz_hyFun(x, y, z)
+        curl_hFun_y = lambda x, y, z: dz_hxFun(x, y, z) - dx_hzFun(x, y, z)
+        curl_hFun_z = lambda x, y, z: dx_hyFun(x, y, z) - dy_hxFun(x, y, z)
+
+        curlH_x = curl_hFun_x(gridX[:,0], gridX[:,1], gridX[:,2])
+        curlH_y = curl_hFun_y(gridY[:,0], gridY[:,1], gridY[:,2])
+        curlH_z = curl_hFun_z(gridZ[:,0], gridZ[:,1], gridZ[:,2])
+
+        return Utils.mkvc(np.hstack([curlH_x, curlH_y, curlH_z]),2)
+
+    def jFun(self):
+        exFun, eyFun, ezFun = self.eFun()
+        jxFun = lambda x, y, z: self.sigFun(x, y, z) * exFun(x, y, z)
+        jyFun = lambda x, y, z: self.sigFun(x, y, z) * eyFun(x, y, z)
+        jzFun = lambda x, y, z: self.sigFun(x, y, z) * ezFun(x, y, z)
+        return jxFun, jyFun, jzFun
+
+    def J(self, gridX, gridY, gridZ):
+        jxFun, jyFun, jzFun = self.jFun()
+        jx = jxFun(gridX[:,0], gridX[:,1], gridX[:,2])
+        jy = jyFun(gridY[:,0], gridY[:,1], gridY[:,2])
+        jz = jzFun(gridZ[:,0], gridZ[:,1], gridZ[:,2])
+
+        return Utils.mkvc(np.hstack([jx, jy, jz]),2)
+
+    def bFun(self):
+        hxFun, hyFun, hzFun = self.hFun()
+        bxFun = lambda x, y, z: self.muFun(x, y, z) * hxFun(x, y, z)
+        byFun = lambda x, y, z: self.muFun(x, y, z) * hyFun(x, y, z)
+        bzFun = lambda x, y, z: self.muFun(x, y, z) * hzFun(x, y, z)
+        return bxFun, byFun, bzFun
+
+    def B(self, gridX, gridY, gridZ):
+        bxFun, byFun, bzFun = self.bFun()
+        bx = bxFun(gridX[:,0], gridX[:,1], gridX[:,2])
+        by = byFun(gridY[:,0], gridY[:,1], gridY[:,2])
+        bz = bzFun(gridZ[:,0], gridZ[:,1], gridZ[:,2])
+
+        return Utils.mkvc(np.hstack([bx, by, bz]),2)
 
     def getError(self):
 
         np.random.seed = 2
-        a = 1e10*np.random.rand(6)
+        self.a = 1e10*np.random.rand(6)
         np.random.seed = 5
-        b = np.random.rand(6) + 10. # make sure b is large enough so that neither sig nor mu is below zero
-        c = 20.
-
-        r2 = lambda x, y, z: x**2 + y**2 + z**2
-        r = lambda x, y, z: np.sqrt(r)
-
-        muFun = lambda x, y, z: mu_0 / ( (np.arctan(a[0]*x) + b[0])*(np.arctan(a[1]*y) + b[1])*(np.arctan(a[2]*z) + b[2]))
-        sigFun = lambda x, y, z: 1. / ( (np.arctan(a[3]*x) + b[3])*(np.arctan(a[4]*y) + b[4])*(np.arctan(a[5]*z) + b[5]))
-
-        exFun = lambda x, y, z: np.exp(-r2(x, y, z)/c) * (np.arctan(a[0]*x) + b[0])
-        eyFun = lambda x, y, z: np.exp(-r2(x, y, z)/c) * (np.arctan(a[1]*y) + b[1])
-        ezFun = lambda x, y, z: np.exp(-r2(x, y, z)/c) * (np.arctan(a[2]*z) + b[2])
-
-        hxFun = lambda x, y, z: np.exp(-r2(x, y, z)/c) * (np.arctan(a[3]*x) + b[3])
-        hyFun = lambda x, y, z: np.exp(-r2(x, y, z)/c) * (np.arctan(a[4]*y) + b[4])
-        hzFun = lambda x, y, z: np.exp(-r2(x, y, z)/c) * (np.arctan(a[5]*z) + b[5])
-
-        jxFun = lambda x, y, z: sigFun(x, y, z) * exFun(x, y, z)
-        jyFun = lambda x, y, z: sigFun(x, y, z) * eyFun(x, y, z)
-        jzFun = lambda x, y, z: sigFun(x, y, z) * ezFun(x, y, z)
-
-        bxFun = lambda x, y, z: muFun(x, y, z) * hxFun(x, y, z)
-        byFun = lambda x, y, z: muFun(x, y, z) * hyFun(x, y, z)
-        bzFun = lambda x, y, z: muFun(x, y, z) * hzFun(x, y, z)
-
-
-        def E(gridX, gridY, gridZ):
-
-            ex = exFun(gridX[:,0], gridX[:,1], gridX[:,2])
-            ey = eyFun(gridY[:,0], gridY[:,1], gridY[:,2])
-            ez = ezFun(gridZ[:,0], gridZ[:,1], gridZ[:,2])
-
-            return Utils.mkvc(np.hstack([ex, ey, ez]),2)
-
-        def B(gridX, gridY, gridZ):
-
-            bx = bxFun(gridX[:,0], gridX[:,1], gridX[:,2])
-            by = byFun(gridY[:,0], gridY[:,1], gridY[:,2])
-            bz = bzFun(gridZ[:,0], gridZ[:,1], gridZ[:,2])
-
-            return Utils.mkvc(np.hstack([bx, by, bz]),2)
-
-        def J(gridX, gridY, gridZ):
-
-            jx = jxFun(gridX[:,0], gridX[:,1], gridX[:,2])
-            jy = jyFun(gridY[:,0], gridY[:,1], gridY[:,2])
-            jz = jzFun(gridZ[:,0], gridZ[:,1], gridZ[:,2])
-
-            return Utils.mkvc(np.hstack([jx, jy, jz]),2)
-
-        def H(gridX, gridY, gridZ):
-
-            hx = hxFun(gridX[:,0], gridX[:,1], gridX[:,2])
-            hy = hyFun(gridY[:,0], gridY[:,1], gridY[:,2])
-            hz = hzFun(gridZ[:,0], gridZ[:,1], gridZ[:,2])
-
-            return Utils.mkvc(np.hstack([hx, hy, hz]),2)
-
-        def curlE(gridX, gridY, gridZ):
-
-            dy_exFun = lambda x, y, z: -2./c * y * exFun(x, y, z)
-            dz_exFun = lambda x, y, z: -2./c * z * exFun(x, y, z)
-            dx_eyFun = lambda x, y, z: -2./c * x * eyFun(x, y, z)
-            dz_eyFun = lambda x, y, z: -2./c * z * eyFun(x, y, z)
-            dx_ezFun = lambda x, y, z: -2./c * x * ezFun(x, y, z)
-            dy_ezFun = lambda x, y, z: -2./c * y * ezFun(x, y, z) 
-
-            curl_eFun_x = lambda x, y, z: dy_ezFun(x, y, z) - dz_eyFun(x, y, z)
-            curl_eFun_y = lambda x, y, z: dz_exFun(x, y, z) - dx_ezFun(x, y, z)
-            curl_eFun_z = lambda x, y, z: dx_eyFun(x, y, z) - dy_exFun(x, y, z)
-
-            curlE_x = curl_eFun_x(gridX[:,0], gridX[:,1], gridX[:,2])
-            curlE_y = curl_eFun_y(gridY[:,0], gridY[:,1], gridY[:,2])
-            curlE_z = curl_eFun_z(gridZ[:,0], gridZ[:,1], gridZ[:,2])
-
-            return Utils.mkvc(np.hstack([curlE_x, curlE_y, curlE_z]),2)
-
-
-        def curlH(gridX, gridY, gridZ): 
-
-            dy_hxFun = lambda x, y, z: -2./c * y * hxFun(x, y, z)
-            dz_hxFun = lambda x, y, z: -2./c * z * hxFun(x, y, z)
-            dx_hyFun = lambda x, y, z: -2./c * x * hyFun(x, y, z)
-            dz_hyFun = lambda x, y, z: -2./c * z * hyFun(x, y, z)
-            dx_hzFun = lambda x, y, z: -2./c * x * hzFun(x, y, z)
-            dy_hzFun = lambda x, y, z: -2./c * y * hzFun(x, y, z) 
-
-            curl_hFun_x = lambda x, y, z: dy_hzFun(x, y, z) - dz_hyFun(x, y, z)
-            curl_hFun_y = lambda x, y, z: dz_hxFun(x, y, z) - dx_hzFun(x, y, z)
-            curl_hFun_z = lambda x, y, z: dx_hyFun(x, y, z) - dy_hxFun(x, y, z)
-
-            curlH_x = curl_hFun_x(gridX[:,0], gridX[:,1], gridX[:,2])
-            curlH_y = curl_hFun_y(gridY[:,0], gridY[:,1], gridY[:,2])
-            curlH_z = curl_hFun_z(gridZ[:,0], gridZ[:,1], gridZ[:,2])
-
-            return Utils.mkvc(np.hstack([curlH_x, curlH_y, curlH_z]),2)
+        self.b = np.random.rand(6) + 10. # make sure b is large enough so that neither sig nor mu is below zero
+        self.c = 20.
 
         fdemType = self.fdemType
 
-        mu = muFun(self.M.gridCC[:,0],self.M.gridCC[:,1],self.M.gridCC[:,2])
-        sigma = sigFun(self.M.gridCC[:,0],self.M.gridCC[:,1],self.M.gridCC[:,2])
+        mu = self.muFun(self.M.gridCC[:,0],self.M.gridCC[:,1],self.M.gridCC[:,2])
+        sigma = self.sigFun(self.M.gridCC[:,0],self.M.gridCC[:,1],self.M.gridCC[:,2])
 
         if fdemType is 'e' or fdemType is 'b':
-            S_mfict = curlE(self.M.gridFx, self.M.gridFy, self.M.gridFz) + EM.Utils.EMUtils.omega(freq) * B(self.M.gridFx, self.M.gridFy, self.M.gridFz)
+            S_mfict = self.curlE(self.M.gridFx, self.M.gridFy, self.M.gridFz) + EM.Utils.EMUtils.omega(freq) * self.B(self.M.gridFx, self.M.gridFy, self.M.gridFz)
             
-            S_efict = curlH(self.M.gridEx, self.M.gridEy, self.M.gridEz) - J(self.M.gridEx, self.M.gridEy, self.M.gridEz)
+            S_efict = self.curlH(self.M.gridEx, self.M.gridEy, self.M.gridEz) - self.J(self.M.gridEx, self.M.gridEy, self.M.gridEz)
 
         elif fdemType is 'h' or fdemType is 'j':
-            S_mfict = curlE(self.M.gridEx, self.M.gridEy, self.M.gridEz) + EM.Utils.EMUtils.omega(freq) * B(self.M.gridEx, self.M.gridEy, self.M.gridEz)
+            S_mfict = self.curlE(self.M.gridEx, self.M.gridEy, self.M.gridEz) + EM.Utils.EMUtils.omega(freq) * self.B(self.M.gridEx, self.M.gridEy, self.M.gridEz)
             
-            S_efict = curlH(self.M.gridFx, self.M.gridFy, self.M.gridFz) - J(self.M.gridFx, self.M.gridFy, self.M.gridFz)
+            S_efict = self.curlH(self.M.gridFx, self.M.gridFy, self.M.gridFz) - self.J(self.M.gridFx, self.M.gridFy, self.M.gridFz)
 
 
         mapping = [('sigma', Maps.IdentityMap(self.M)),('mu', Maps.IdentityMap(self.M))]
@@ -341,11 +364,11 @@ class fictitiousSourceTest(OrderTest):
             prb = EM.FDEM.ProblemFDEM_e(self.M, mapping=mapping)
 
             if testType is 'Flux':  
-                sol_ana = B(self.M.gridFx, self.M.gridFy, self.M.gridFz)
+                sol_ana = self.B(self.M.gridFx, self.M.gridFy, self.M.gridFz)
                 Av = self.M.aveF2CCV
                 solType = 'b'
             elif testType is 'Field':
-                sol_ana = E(self.M.gridEx, self.M.gridEy, self.M.gridEz)
+                sol_ana = self.E(self.M.gridEx, self.M.gridEy, self.M.gridEz)
                 solType = 'e'
                 Av = self.M.aveE2CCV
 
@@ -353,11 +376,11 @@ class fictitiousSourceTest(OrderTest):
             prb = EM.FDEM.ProblemFDEM_b(self.M, mapping=mapping)
 
             if testType is 'Flux':  
-                sol_ana = B(self.M.gridFx, self.M.gridFy, self.M.gridFz)
+                sol_ana = self.B(self.M.gridFx, self.M.gridFy, self.M.gridFz)
                 Av = self.M.aveF2CCV
                 solType = 'b'
             elif testType is 'Field':
-                sol_ana = E(self.M.gridEx, self.M.gridEy, self.M.gridEz)
+                sol_ana = self.E(self.M.gridEx, self.M.gridEy, self.M.gridEz)
                 solType = 'e'
                 Av = self.M.aveE2CCV
 
@@ -365,11 +388,11 @@ class fictitiousSourceTest(OrderTest):
             prb = EM.FDEM.ProblemFDEM_j(self.M, mapping=mapping)
 
             if testType is 'Flux':  
-                sol_ana = J(self.M.gridFx, self.M.gridFy, self.M.gridFz)
+                sol_ana = self.J(self.M.gridFx, self.M.gridFy, self.M.gridFz)
                 Av = self.M.aveF2CCV
                 solType = 'j'
             elif testType is 'Field':
-                sol_ana = H(self.M.gridEx, self.M.gridEy, self.M.gridEz)
+                sol_ana = self.H(self.M.gridEx, self.M.gridEy, self.M.gridEz)
                 solType = 'h'
                 Av = self.M.aveE2CCV
 
@@ -377,11 +400,11 @@ class fictitiousSourceTest(OrderTest):
             prb = EM.FDEM.ProblemFDEM_h(self.M, mapping=mapping)
 
             if testType is 'Flux':  
-                sol_ana = J(self.M.gridFx, self.M.gridFy, self.M.gridFz)
+                sol_ana = self.J(self.M.gridFx, self.M.gridFy, self.M.gridFz)
                 Av = self.M.aveF2CCV
                 solType = 'j'
             elif testType is 'Field':
-                sol_ana = H(self.M.gridEx, self.M.gridEy, self.M.gridEz)
+                sol_ana = self.H(self.M.gridEx, self.M.gridEy, self.M.gridEz)
                 solType = 'h'
                 Av = self.M.aveE2CCV
 
@@ -398,7 +421,13 @@ class fictitiousSourceTest(OrderTest):
         res2 = abs(sol - sol_ana)**2
         Vt = np.kron(np.ones([1,3]),self.M.vol)
         err = np.sqrt(Vt*(Av*res2))[0][0]
+
         return err
+
+    def test_FictSource_e(self):
+        self.name = 'Ficticious Source Test eFwd'
+        self.fdemType = 'eFwd'      
+        self.orderTest()
 
     def test_FictSource_e(self):
         self.name = 'Ficticious Source Test e'
@@ -416,6 +445,7 @@ class fictitiousSourceTest(OrderTest):
         self.name = 'Ficticious Source Test j'
         self.fdemType = 'j'      
         self.orderTest()
+
 
 
 if __name__ == '__main__':
