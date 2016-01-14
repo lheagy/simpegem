@@ -1,5 +1,9 @@
-simpegEM
-========
+MOVED INTO `SimPEG.EM`
+======================
+
+**This repo is no longer active. See [https://github.com/simpeg/simpeg](SimPEG)**
+
+
 
 A electromagnetic forward modeling and inversion package for SimPEG.
 
